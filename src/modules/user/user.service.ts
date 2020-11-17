@@ -31,25 +31,11 @@ export class UserService {
     return this.users.find((user) => user.username === username);
   }
 
-  async findByLogin(
-    username: string,
-    password: string,
-  ): Promise<User | undefined> {
-    if (!username || !password) {
-      throw new HttpException('Tài khoản không tồn tại!', HttpStatus.NOT_FOUND);
-    } else {
-      const user = this.users.find(
-        (user) => user.username === username && password === password,
-      );
-      if (user) {
-        return user;
-      } else {
-        throw new HttpException(
-          'Sai tên đăng nhập hoặc mật khẩu!',
-          HttpStatus.FORBIDDEN,
-        );
-      }
-    }
+  async findByLogin(username: string, password: string): Promise<User> {
+    const user = this.users.find(
+      (user) => user.username === username && password === password,
+    );
+    return user;
   }
 
   async findByPayload({ username }: any): Promise<User> {

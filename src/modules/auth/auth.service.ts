@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { HttpResult, IHttpResult } from 'src/shared/http-result';
 import { User } from 'src/shared/models/user';
@@ -18,7 +18,10 @@ export class AuthService {
   async validateUser(payload: JwtPayload): Promise<User> {
     const user = await this.userService.findByPayload(payload);
     if (!user) {
-      throw new HttpException('Token không hợp lệ', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Token không hợp lệ! Vui lòng đăng nhập lại',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     return user;
   }
@@ -39,21 +42,28 @@ export class AuthService {
     if (user.username) {
       const getUser = await this.userService.findOne(user.username);
       if (getUser) {
-        result = HttpResult(true, '');
+        result = HttpResult(true, 'Tên đăng nhập hợp lệ');
       } else {
-        result = HttpResult(false, '');
+        result = HttpResult(false, 'Tên đăng nhập đã tồn tại');
       }
     }
     return result;
   }
 
   async login(username: string, password: string): Promise<IHttpResult> {
+    if (!username || !password) {
+      return HttpResult(false, 'Tài khoản không được để trống');
+    }
     const user = await this.userService.findByLogin(username, password);
-    const token = this.createToken(username);
-    return HttpResult(true, 'Đăng nhập thành công', {
-      user,
-      token: token.accessToken,
-    });
+    if (user) {
+      const token = this.createToken(username);
+      return HttpResult(true, 'Đăng nhập thành công', {
+        user,
+        token: token.accessToken,
+      });
+    } else {
+      return HttpResult(false, 'Tên đăng nhập hoặc mật khẩu không chính xác');
+    }
   }
 
   private createToken(username: string): any {

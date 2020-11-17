@@ -1,22 +1,26 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { HttpResult, IHttpResult } from 'src/shared/http-result';
-import { User } from 'src/shared/models/user';
+import { UserDto } from 'src/shared/models/user';
+import { User, UserDocument } from 'src/shared/schemas/user';
 import { UserService } from '../user/user.service';
 import { JwtPayload } from './jwt.strategy';
-
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   /**
    *
    */
   constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private userService: UserService,
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(payload: JwtPayload): Promise<User> {
-    const user = await this.userService.findByPayload(payload);
+  async validateUser(payload: JwtPayload): Promise<UserDocument> {
+    const user = await this.userService.findOneById(payload.userId);
     if (!user) {
       throw new HttpException(
         'Token không hợp lệ! Vui lòng đăng nhập lại',
@@ -26,10 +30,11 @@ export class AuthService {
     return user;
   }
 
-  async register(user: User): Promise<IHttpResult> {
+  async register(userDto: UserDto): Promise<IHttpResult> {
+    userDto.password = await bcrypt.hash(userDto.password, 10);
     let result: IHttpResult;
     try {
-      const newUser = await this.userService.createUser(user);
+      const newUser = await this.userService.createUser(userDto);
       result = HttpResult(true, 'Tạo tài khoản thành công', newUser);
     } catch (error) {
       result = HttpResult(false, '`Tạo tài khoản thất bại!', error);
@@ -37,10 +42,12 @@ export class AuthService {
     return result;
   }
 
-  async isExistUser(user: User): Promise<IHttpResult> {
+  async isExistUser(userDto: UserDto): Promise<IHttpResult> {
     let result: IHttpResult;
-    if (user.username) {
-      const getUser = await this.userService.findOne(user.username);
+    if (userDto.username) {
+      const getUser = await this.userService.findOneByUsername(
+        userDto.username,
+      );
       if (getUser) {
         result = HttpResult(true, 'Tên đăng nhập hợp lệ');
       } else {
@@ -50,28 +57,28 @@ export class AuthService {
     return result;
   }
 
-  async login(username: string, password: string): Promise<IHttpResult> {
-    if (!username || !password) {
+  async login(userDto: UserDto): Promise<IHttpResult> {
+    if (!userDto.username || !userDto.password) {
       return HttpResult(false, 'Tài khoản không được để trống');
     }
-    const user = await this.userService.findByLogin(username, password);
+    const user = await this.userService.findByLogin(userDto);
     if (user) {
-      const token = this.createToken(username);
+      const token = this.createToken(user);
       return HttpResult(true, 'Đăng nhập thành công', {
         user,
-        token: token.accessToken,
+        token: token,
       });
     } else {
       return HttpResult(false, 'Tên đăng nhập hoặc mật khẩu không chính xác');
     }
   }
 
-  private createToken(username: string): any {
-    const user: JwtPayload = { username: username };
-    const accessToken = this.jwtService.sign(user);
-    return {
-      expiresIn: process.env.EXPIRESIN,
-      accessToken,
+  private createToken(userDto: UserDocument): any {
+    const user: JwtPayload = {
+      userId: userDto._id,
+      username: userDto.username,
     };
+    const accessToken = this.jwtService.sign(user);
+    return accessToken;
   }
 }

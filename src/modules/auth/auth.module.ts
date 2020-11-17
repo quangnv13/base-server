@@ -5,8 +5,6 @@ import { UserModule } from '../user/user.module';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 
-require('dotenv').config();
-
 @Module({
   imports: [
     UserModule,

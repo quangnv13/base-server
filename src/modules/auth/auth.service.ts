@@ -1,20 +1,16 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { HttpResult, IHttpResult } from 'src/shared/http-result';
 import { UserDto } from 'src/shared/models/user';
-import { User, UserDocument } from 'src/shared/schemas/user';
+import { UserDocument } from 'src/shared/schemas/user';
 import { UserService } from '../user/user.service';
 import { JwtPayload } from './jwt.strategy';
-import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   /**
    *
    */
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private userService: UserService,
     private jwtService: JwtService,
   ) {}
@@ -31,15 +27,7 @@ export class AuthService {
   }
 
   async register(userDto: UserDto): Promise<IHttpResult> {
-    userDto.password = await bcrypt.hash(userDto.password, 10);
-    let result: IHttpResult;
-    try {
-      const newUser = await this.userService.createUser(userDto);
-      result = HttpResult(true, 'Tạo tài khoản thành công', newUser);
-    } catch (error) {
-      result = HttpResult(false, '`Tạo tài khoản thất bại!', error);
-    }
-    return result;
+    return await this.userService.createUser(userDto);
   }
 
   async isExistUser(userDto: UserDto): Promise<IHttpResult> {
@@ -63,6 +51,12 @@ export class AuthService {
     }
     const user = await this.userService.findByLogin(userDto);
     if (user) {
+      if (!user.isActive) {
+        return HttpResult(
+          false,
+          'Tài khoản đang bị khóa! Vui lòng liên hệ chúng tôi để kiểm tra lại',
+        );
+      }
       const token = this.createToken(user);
       return HttpResult(true, 'Đăng nhập thành công', {
         user,

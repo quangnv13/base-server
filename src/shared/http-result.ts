@@ -6,7 +6,7 @@ export interface IHttpResult {
 
 export function HttpResult(
   success: boolean,
-  message: string,
+  message?: string,
   data?: any,
 ): IHttpResult {
   return { success, message, data };

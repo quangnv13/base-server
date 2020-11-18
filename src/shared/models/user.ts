@@ -10,5 +10,3 @@ export class UserDto {
   createTime: number;
   updateTime: number;
 }
-
-export class UserInfoDto extends UserDto {}

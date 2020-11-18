@@ -27,6 +27,7 @@ export class User {
 
   @Prop({
     required: true,
+    unique: true,
     validate: (value) =>
       !isNullOrEmptyOrWhitespace(value) && isValidLength(value, 6, 500),
   })

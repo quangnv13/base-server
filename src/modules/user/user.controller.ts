@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
+  Param,
   ParseIntPipe,
   Post,
   Put,
@@ -47,9 +49,9 @@ export class UserController {
     return await this.userService.updateUser(userDto);
   }
 
-  @Delete('delete')
+  @Delete('delete/:id')
   @Roles('admin')
-  async deleteUser(userId: string): Promise<IHttpResult> {
+  async deleteUser(@Param('id') userId: string): Promise<IHttpResult> {
     return await this.userService.deleteUser(userId);
   }
 }

@@ -5,6 +5,7 @@ import { UserDto } from 'src/shared/models/user';
 import { User, UserDocument } from 'src/shared/schemas/user';
 import * as bcrypt from 'bcrypt';
 import { HttpResult, IHttpResult } from 'src/shared/http-result';
+import { getCurrentTime } from 'src/shared/utils';
 @Injectable()
 export class UserService {
   /**
@@ -33,7 +34,7 @@ export class UserService {
     pageSize: number,
   ): Promise<IHttpResult> {
     if (!sort) {
-      sort = { createTime: -1 };
+      sort = { createTime: -1, updateTime: -1 };
     }
 
     return HttpResult(true, null, {
@@ -92,9 +93,13 @@ export class UserService {
 
   async updateUser(userDto: UserDto): Promise<IHttpResult> {
     try {
+      userDto.updateTime = getCurrentTime();
       const newUser = await this.userModel.findOneAndUpdate(
         { _id: userDto.userId },
         userDto,
+        {
+          new: true,
+        },
       );
       return HttpResult(true, null, { user: newUser });
     } catch (error) {
@@ -109,7 +114,7 @@ export class UserService {
     try {
       await this.userModel.findOneAndUpdate(
         { _id: userId },
-        { isDelete: true },
+        { isDelete: true, updateTime: getCurrentTime() },
       );
       return HttpResult(true, 'Đã xóa tài khoản');
     } catch (error) {

@@ -22,6 +22,7 @@ import { AuthController } from './modules/auth/auth.controller';
         useNewUrlParser: true,
         useUnifiedTopology: true,
         useCreateIndex: true, //DeprecationWarning: collection.ensureIndex is deprecated. Use createIndexes instead.
+        useFindAndModify: false,
       },
     ),
   ],

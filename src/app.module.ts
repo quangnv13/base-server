@@ -8,6 +8,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config/dist/config.module';
 import { UserController } from './modules/user/user.controller';
 import { AuthController } from './modules/auth/auth.controller';
+import { APP_FILTER } from '@nestjs/core';
+import { AllExceptionFilter } from './modules/logger/exeption.filter';
 
 @Module({
   imports: [
@@ -27,6 +29,13 @@ import { AuthController } from './modules/auth/auth.controller';
     ),
   ],
   controllers: [AppController, AuthController, UserController],
-  providers: [AppService, AuthService],
+  providers: [
+    AppService,
+    AuthService,
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
